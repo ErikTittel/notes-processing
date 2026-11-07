@@ -2,11 +2,10 @@
   "version": "1.2.6.dev0",
   "integration_state_schema": 1,
   "installed_integrations": [
-    "copilot",
     "claude"
   ],
   "integration_settings": {
-    "copilot": {
+    "claude": {
       "script": "py",
       "invoke_separator": "-"
     }
