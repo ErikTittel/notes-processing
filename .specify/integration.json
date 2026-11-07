@@ -2,14 +2,19 @@
   "version": "1.2.6.dev0",
   "integration_state_schema": 1,
   "installed_integrations": [
+    "claude",
     "copilot"
   ],
   "integration_settings": {
+    "claude": {
+      "script": "py",
+      "invoke_separator": "-"
+    },
     "copilot": {
       "script": "py",
       "invoke_separator": "-"
     }
   },
-  "integration": "copilot",
-  "default_integration": "copilot"
+  "integration": "claude",
+  "default_integration": "claude"
 }
