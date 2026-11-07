@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<one:Page xmlns:one="http://schemas.microsoft.com/office/onenote/2013/onenote" ID="P4" name="01.11.23" pageLevel="1" lang="de">
+  <one:QuickStyleDef index="0" name="PageTitle" highlightColor="automatic" font="Calibri Light" fontSize="20.0" fontColor="automatic" spaceBefore="0.0" spaceAfter="0.0"/>
+  <one:QuickStyleDef index="1" name="h2" highlightColor="automatic" font="Calibri Light" fontSize="14.0" fontColor="#2e75b5" spaceBefore="0.0" spaceAfter="0.0"/>
+  <one:QuickStyleDef index="2" name="p" highlightColor="automatic" font="Calibri" fontSize="11.0" fontColor="automatic" spaceBefore="0.0" spaceAfter="0.0"/>
+  <one:PageSettings RTL="false" color="automatic"><one:PageSize><one:Automatic/></one:PageSize><one:RuleLines visible="false"/></one:PageSettings>
+  <one:Title lang="de"><one:OE objectID="P4-title" quickStyleIndex="0"><one:T><![CDATA[01.11.23]]></one:T></one:OE></one:Title>
+  <one:Outline objectID="P4-out86"><one:Position x="36" y="86.4" z="0"/><one:Size width="400" height="50"/><one:OEChildren><one:OE objectID="P4-oe1" quickStyleIndex="1"><one:T><![CDATA[Überschrift im Text]]></one:T></one:OE><one:OE objectID="P4-oe2" quickStyleIndex="2"><one:T><![CDATA[Normaler Absatz]]></one:T></one:OE></one:OEChildren></one:Outline>
+</one:Page>
