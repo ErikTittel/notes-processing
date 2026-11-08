@@ -25,6 +25,7 @@ from .onenote.errors import NotFound
 from .onexml import content_elements, local, parse
 from .report import to_jsonable
 from .titles import decide_titles, month_title
+from .videos import find_video_previews, preview_message
 
 NON_TEXT = {
     "Image": ("Bild", "Bilder"),
@@ -37,7 +38,11 @@ NON_TEXT = {
 def select(source: SourceNotebook, scope: Scope) -> list[tuple[SourceGroup, list]]:
     """Groups in scope with their sections in scope (locked ones included)."""
     if scope.kind == "all":
-        return [(g, list(g.sections)) for g in source.groups]
+        names = {g.name for g in source.groups}
+        missing = [name for name in scope.exclude if name not in names]
+        if missing:
+            raise NotFound(f"Auszuschließende Abschnittsgruppe „{missing[0]}“ nicht gefunden")
+        return [(g, list(g.sections)) for g in source.groups if g.name not in scope.exclude]
     groups = [g for g in source.groups if g.name == scope.group]
     if not groups:
         raise NotFound(f"Abschnittsgruppe „{scope.group}“ nicht gefunden")
@@ -102,6 +107,14 @@ def build_plan(
         attention.append(
             AttentionItem(
                 "duplicate_group", "Name der Abschnittsgruppe kommt mehrfach vor", (name,)
+            )
+        )
+    for name in scope.exclude:
+        attention.append(
+            AttentionItem(
+                "excluded_group",
+                "Abschnittsgruppe ist ausgeschlossen und wird nicht übertragen",
+                (name,),
             )
         )
     group_names = {g.name for g, _ in selected}
@@ -183,10 +196,22 @@ def build_plan(
                         kind, target = classify(href, index)
                         if kind != LinkKind.EXTERNAL:
                             links.append(LinkRef(p.id, text, href, kind, target))
-                    for el in content_elements(parse(xml)):
+                    page = parse(xml)
+                    for el in content_elements(page):
                         for node in el.iter():
                             if local(node.tag) in NON_TEXT:
                                 non_text[local(node.tag)] += 1
+                    for image, url in find_video_previews(page):
+                        attention.append(
+                            AttentionItem(
+                                "video_preview",
+                                preview_message(
+                                    url, url is not None and not image.get("hyperlink")
+                                ),
+                                (group.name, s.name, p.title),
+                                p.id,
+                            )
+                        )
                 if non_text:
                     parts = ", ".join(
                         _plural(non_text[k], NON_TEXT[k]) for k in NON_TEXT if non_text[k]

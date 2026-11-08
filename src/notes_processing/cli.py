@@ -58,6 +58,13 @@ def _parser() -> argparse.ArgumentParser:
     plan.add_argument("--target", required=True, help="Name des neuen Zielnotizbuchs")
     plan.add_argument("--group", help="nur diese Abschnittsgruppe")
     plan.add_argument("--section", help="nur dieser Abschnitt (erfordert --group)")
+    plan.add_argument(
+        "--exclude-group",
+        action="append",
+        default=[],
+        metavar="GROUP",
+        help="diese Abschnittsgruppe auslassen (mehrfach möglich, nicht mit --group)",
+    )
     plan.add_argument("--target-folder", help="Ordner für das neue Notizbuch")
     plan.add_argument("--out", help="Ordner für den Lauf (Standard: runs/<Zeitstempel>)")
     apply = sub.add_parser("apply", help="geprüften Plan ausführen")
@@ -121,8 +128,9 @@ def summary_lines(plan: Plan) -> list[str]:
 
 def cmd_plan(args, gw) -> int:
     source, folder = _read_source(gw, args.source, args.target, args.target_folder)
+    scope = Scope.build(args.group, args.section, tuple(args.exclude_group))
     try:
-        plan, _ = make_plan(gw, source, Scope.build(args.group, args.section), args.target, folder)
+        plan, _ = make_plan(gw, source, scope, args.target, folder)
     except NotFound as exc:
         raise _Exit(BAD_ARGS, str(exc)) from exc
     out = Path(args.out) if args.out else Path("runs") / datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -225,6 +233,9 @@ def main(
         return BAD_ARGS if exc.code else OK
     if getattr(args, "section", None) and not args.group:
         _err("--section erfordert --group.")
+        return BAD_ARGS
+    if getattr(args, "exclude_group", None) and args.group:
+        _err("--exclude-group ist nur ohne --group möglich.")
         return BAD_ARGS
     try:
         gw = gateway_factory()

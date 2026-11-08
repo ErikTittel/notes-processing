@@ -106,21 +106,26 @@ class Scope:
     kind: str = "all"  # "all" | "group" | "section"
     group: str | None = None
     section: str | None = None
+    exclude: tuple[str, ...] = ()  # section group names left out of an "all" run
 
     def __str__(self) -> str:
         if self.kind == "group":
             return f"group:{self.group}"
         if self.kind == "section":
             return f"section:{self.group}/{self.section}"
+        if self.exclude:
+            return "all ohne " + ", ".join(f"„{name}“" for name in self.exclude)
         return "all"
 
     @classmethod
-    def build(cls, group: str | None, section: str | None) -> Scope:
+    def build(cls, group: str | None, section: str | None, exclude: tuple[str, ...] = ()) -> Scope:
+        if exclude and group is not None:
+            raise ValueError("--exclude-group ist nur ohne --group möglich")
         if section is not None:
             return cls("section", group, section)
         if group is not None:
             return cls("group", group)
-        return cls()
+        return cls(exclude=tuple(dict.fromkeys(exclude)))
 
 
 @dataclass(frozen=True)

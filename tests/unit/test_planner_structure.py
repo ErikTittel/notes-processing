@@ -48,6 +48,21 @@ def test_unknown_scope_raises(group, section):
         plan_for(small(), Scope.build(group, section))
 
 
+def test_scope_all_with_excluded_group():
+    plan = plan_for(small(), Scope.build(None, None, ("Projekte",)))
+    assert [s.name for s in plan.sections] == ["2023"]
+    assert {p.source_section_id for p in plan.pages} == {"S1", "S2"}
+    assert ("excluded_group", ("Projekte",)) in [(a.kind, a.names) for a in plan.attention]
+    assert str(plan.scope) == "all ohne „Projekte“"
+
+
+def test_excluded_group_must_exist_and_needs_scope_all():
+    with pytest.raises(NotFound):
+        plan_for(small(), Scope.build(None, None, ("Nope",)))
+    with pytest.raises(ValueError):
+        Scope.build("2023", None, ("Projekte",))
+
+
 def test_edge_attention_items():
     plan = plan_for(edge())
     kinds = [(a.kind, a.names) for a in plan.attention]

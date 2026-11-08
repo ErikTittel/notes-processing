@@ -56,10 +56,27 @@ def test_plan_twice_identical(tmp_path, gw):
 
 @pytest.mark.parametrize(
     "extra",
-    [["--group", "Nope"], ["--group", "2023", "--section", "99-99"], ["--section", "23-10"]],
+    [
+        ["--group", "Nope"],
+        ["--group", "2023", "--section", "99-99"],
+        ["--section", "23-10"],
+        ["--exclude-group", "Nope"],
+        ["--group", "2023", "--exclude-group", "Projekte"],
+    ],
 )
 def test_unknown_scope_is_bad_args(tmp_path, gw, extra):
     assert make_plan(tmp_path, gw, *extra)[0] == cli.BAD_ARGS
+
+
+def test_plan_and_apply_with_excluded_group(tmp_path, gw):
+    code, out = make_plan(tmp_path, gw, "--exclude-group", "Projekte")
+    assert code == cli.OK
+    data = json.loads((out / "plan.json").read_text(encoding="utf-8"))
+    assert data["scope"]["exclude"] == ["Projekte"]
+    assert [s["name"] for s in data["sections"]] == ["2023"]
+    assert "„Projekte“" in (out / "plan.md").read_text(encoding="utf-8")
+    assert run(["apply", "--plan", str(out / "plan.json"), "--yes"], gw) == cli.OK
+    assert gw.write_calls  # the fingerprint matched: the exclusion survives plan.json
 
 
 def test_unknown_source(tmp_path, gw):

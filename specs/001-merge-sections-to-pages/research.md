@@ -118,6 +118,16 @@ The findings below come from a read-only probe of the OneNote COM API against th
   - **Subpages.** Page order is document order. `pageLevel` gives the heading level.
 - **Rationale**: This covers the edge cases in the spec, using only attributes confirmed in the 2013 schema.
 
+## R13 — Embedded online videos (FR-008a)
+
+- **Findings** (tested 2026-11-08 on `OneNote-Test` page 25.07.23 and on `Diary`):
+  - `GetPageContent` shows an embedded online video only as an ordinary `one:Image` with the preview picture. This is the same with every page info mode. The XML has no video address and no video marker. Exporting the page with `Publish` as MHTML, HTML or Word doesn't contain the address either.
+  - Writing a video address with `UpdatePageContent`, as a link or as plain text, only creates a link. OneNote embeds a video only when the address is pasted in its user interface.
+  - OneNote gives a new embedded video the size 267 × 150 or 360 × 202.5 points without `isSetByUser`, or the alternative text "Webinhalt"/"Webinhalte". In `Diary` (without "ab 2024") this matches 14 pages, in `OneNote-Test` 3. Each of them has a YouTube link in its text, usually just before the preview.
+  - `one:Image` accepts a `hyperlink` attribute through `UpdatePageContent`, and OneNote keeps it. An image written through the API always gets `isSetByUser="true"`.
+- **Decision**: Recognise a preview by these sizes or the alternative text (`videos.is_video_preview`). Its video address is the last video link (YouTube, youtu.be, Vimeo) before it on the page, or else the first one after it. The preview is carried over as an image and gets that address as its `hyperlink`, unless it already has a link. Each preview is listed in the plan (`video_preview`) and in the report under "Nicht übertragbare Inhalte" (element "Video"), with the address to paste so OneNote embeds the video again.
+- **Rationale**: A working embedded video can't be written through the API. A linked preview keeps the video one click away, and the list makes re-embedding by hand a short task.
+
 ## Technology summary
 
 | Need | Choice |

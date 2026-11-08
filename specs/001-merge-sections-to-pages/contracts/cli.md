@@ -6,7 +6,7 @@ The tool is used only through this command line. It's installed in the project e
 
 ```text
 notes-processing plan --source NOTEBOOK --target NAME
-                      [--group GROUP [--section SECTION]]
+                      [--group GROUP [--section SECTION] | --exclude-group GROUP ...]
                       [--target-folder PATH] [--out DIR]
 ```
 
@@ -16,6 +16,7 @@ notes-processing plan --source NOTEBOOK --target NAME
 | `--target` | yes | name of the new target notebook. It must not exist yet: no open notebook with this name, and neither a folder `<target-folder>\<name>` nor a OneDrive shortcut `<target-folder>\<name>.url`. |
 | `--group` | no | limit the run to one section group |
 | `--section` | no | limit it to one section of `--group` |
+| `--exclude-group` | no | leave this section group out of a whole-notebook run. It can be given more than once and can't be combined with `--group`. The name must exist. It is stored in `plan.json` (`scope.exclude`), so `apply` rebuilds the same plan. |
 | `--target-folder` | no | folder for the new notebook. The default is OneNote's default notebook folder. |
 | `--out` | no | run folder. The default is `runs/<YYYYMMDD-HHMMSS>/`. |
 
@@ -26,7 +27,7 @@ notes-processing plan --source NOTEBOOK --target NAME
 | Code | Meaning |
 |------|---------|
 | 0 | plan written |
-| 2 | wrong arguments, or the source, group or section isn't found |
+| 2 | wrong arguments, or the source, group, section or excluded group isn't found |
 | 3 | the target already exists: a notebook with that name is open, or the target folder or its `.url` shortcut exists |
 | 4 | OneNote isn't available |
 

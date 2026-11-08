@@ -130,6 +130,14 @@ def test_classify_partial_run_outside_transfer():
     assert classify(B + r"\Projekte", idx) == (LinkKind.TRANSFERRED_GROUP, "G2")
 
 
+def test_classify_excluded_group_outside_transfer():
+    idx = index(Scope.build(None, None, ("2023",)))
+    href = B + r"\2023\23-11.one#02.11.23&section-id={L-S2}&page-id={L-P6}&end"
+    assert classify(href, idx) == (LinkKind.OUTSIDE_TRANSFER, None)
+    assert classify(B + r"\2023", idx) == (LinkKind.OUTSIDE_TRANSFER, None)
+    assert classify(B + r"\Projekte", idx) == (LinkKind.TRANSFERRED_GROUP, "G2")
+
+
 def test_extract_links():
     links = extract_links(read_fixture("pages/P10.xml"))
     assert [t for t, _ in links] == ["Planung", "Projekt", "Oktober", "Projekte", "Beetplan"]

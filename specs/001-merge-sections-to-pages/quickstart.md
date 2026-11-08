@@ -77,7 +77,7 @@ During step 5, close OneNote while the run is in progress. Expected: after 3 ret
 
 ## 7. Real notebook
 
-Repeat steps 3 and 5 with the real notebook's name. Before confirming, check `plan.md`: look at the title corrections, the "could not be corrected" and "out of order" lists, and the attention items. Expected run time: under 2 hours (SC-005).
+Repeat steps 3 and 5 with the real notebook's name. To leave a section group out, add `--exclude-group "ab 2024"` to `plan`; `apply` takes the exclusion from `plan.json`. After the run, re-embed each video listed as `video_preview` in the plan ("Video" in the report): paste its address on the new page in OneNote, then delete the preview picture. Before confirming, check `plan.md`: look at the title corrections, the "could not be corrected" and "out of order" lists, and the attention items. Expected run time: under 2 hours (SC-005).
 
 ## Validation log
 

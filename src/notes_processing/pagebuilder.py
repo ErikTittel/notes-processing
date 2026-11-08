@@ -12,6 +12,7 @@ from .layout import BlockInput, Box, find_overlaps, layout_blocks
 from .links import ANCHOR, html_text
 from .model import ContentIssue, PlannedPage, SourcePage, TitleDecision
 from .onexml import content_elements, local, parse, q, tostring
+from .videos import find_video_previews, preview_message
 
 TITLE_BOTTOM = 86.4
 HEADING_HEIGHT = 30.0
@@ -247,6 +248,13 @@ def build_target_page(
             issues.append(
                 ContentIssue(page.id, page.title, planned.source_section_name, element, message)
             )
+
+        # An embedded video arrives as its preview picture only: link it to the video.
+        for image, url in find_video_previews(src):
+            linked = url is not None and not image.get("hyperlink")
+            if linked:
+                image.set("hyperlink", url)
+            issue("Video", preview_message(url, linked))
 
         elements = []
         for el in content_elements(src):
