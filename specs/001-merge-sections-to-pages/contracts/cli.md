@@ -76,3 +76,5 @@ Re-reads the source and target pages and runs the check from FR-011 again, then 
 ## OneNote gateway (internal boundary)
 
 Every COM call goes through one class, `OneNoteGateway` (`src/notes_processing/onenote/gateway.py`). Its read methods are `hierarchy`, `page_xml`, `link_to` and `special_folder`. Its write methods are `create_notebook`, `create_section`, `create_page` and `update_page`. The write methods refuse any ID outside the target notebook recorded at `create_notebook`. Tests use `FakeGateway`, which has the same interface and works on in-memory XML.
+
+**Test helpers**: Two more write capabilities exist only to build throwaway source notebooks for the integration tests. They are `create_section_group(name)` and the optional `parent_id` of `create_section(name, parent_id=None)`, which places a section inside such a group. The tool itself never calls them: `apply` creates only sections directly in the target notebook. They are covered by the same guard, so they work only inside a notebook created by that gateway instance, never in the source notebook. `FakeGateway` mirrors them so the guard can be unit-tested.

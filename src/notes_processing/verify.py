@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import difflib
+import html
+import re
 import xml.etree.ElementTree as ET
 from collections.abc import Sequence
 
-from .links import html_text
+from .links import ANCHOR, html_text
 from .model import Mismatch, PlannedPage, VerificationResult
 from .onexml import content_elements, local, parse, q
 
@@ -25,6 +27,24 @@ def extract_text(element: ET.Element) -> str:
 def page_paragraphs(page_xml: str) -> list[str]:
     """All paragraphs of a page's content (title excluded)."""
     return [p for el in content_elements(parse(page_xml)) for p in paragraphs(el)]
+
+
+_WEB = re.compile(r"^https?://", re.IGNORECASE)
+
+
+def web_links(element: ET.Element) -> list[str]:
+    """Addresses of the web (http/https) links below `element`, in document order."""
+    return [
+        href
+        for t in element.iter(q("T"))
+        for m in ANCHOR.finditer(t.text or "")
+        if _WEB.match(href := html.unescape(m.group(2)))
+    ]
+
+
+def page_web_links(page_xml: str) -> list[str]:
+    """Web link addresses of a page's content (title excluded)."""
+    return [h for el in content_elements(parse(page_xml)) for h in web_links(el)]
 
 
 def _style_names(page: ET.Element) -> dict[str, str]:
@@ -67,13 +87,19 @@ def verify_page(
     source_texts: Sequence[Sequence[str]],
     target_xml: str,
     target_page_id: str = "",
+    source_links: Sequence[Sequence[str]] | None = None,
 ) -> VerificationResult:
-    """Compare the merged page with the source paragraphs of each former page."""
+    """Compare the merged page with the source paragraphs of each former page.
+
+    With `source_links`, the web link addresses of each former page are compared too, so a
+    web link that OneNote did not recreate (see pagebuilder.unlink_bare_urls) is reported.
+    """
     headings = [b.heading for b in planned.blocks]
     split = split_target_blocks(target_xml, headings)
     problems: list[Mismatch] = []
-    for block, expected, (heading_el, elements) in zip(
-        planned.blocks, source_texts, split, strict=True
+    links = source_links if source_links is not None else [None] * len(planned.blocks)
+    for block, expected, want_links, (heading_el, elements) in zip(
+        planned.blocks, source_texts, links, split, strict=True
     ):
 
         def add(kind: str, detail: str, block=block) -> None:
@@ -81,8 +107,22 @@ def verify_page(
 
         if heading_el is None:
             add("heading", f"Überschrift „{block.heading}“ fehlt")
-        actual = [p for el in elements for p in paragraphs(el)]
-        if list(expected) == actual:
+        if want_links is not None:
+            got_links = [h for el in elements for h in web_links(el)]
+            if list(want_links) != got_links:
+                for href in want_links:
+                    if href not in got_links:
+                        add("link", f"Weblink fehlt: {href}")
+                for href in got_links:
+                    if href not in want_links:
+                        add("link", f"Weblink zusätzlich: {href}")
+                if set(want_links) == set(got_links):
+                    add("link", "Weblinks in anderer Reihenfolge oder Anzahl")
+        # OneNote drops whitespace at the end of a paragraph when a page is saved, so it is not
+        # compared (spec FR-011). Everything else, including leading and inner whitespace, is.
+        expected = [p.rstrip() for p in expected]
+        actual = [p.rstrip() for el in elements for p in paragraphs(el)]
+        if expected == actual:
             continue
         sm = difflib.SequenceMatcher(a=list(expected), b=actual, autojunk=False)
         for op, a1, a2, b1, b2 in sm.get_opcodes():

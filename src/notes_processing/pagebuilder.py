@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import copy
 import html
+import re
 import xml.etree.ElementTree as ET
 from collections.abc import Sequence
 
 from .layout import BlockInput, Box, find_overlaps, layout_blocks
+from .links import ANCHOR, html_text
 from .model import ContentIssue, PlannedPage, SourcePage, TitleDecision
 from .onexml import content_elements, local, parse, q, tostring
 
@@ -25,6 +27,43 @@ _ELEMENT_NAMES = {
     "InsertedFile": "eingebettete Datei",
     "MediaFile": "Audio-/Videodatei",
 }
+
+
+_WEB_URL = re.compile(r"^https?://\S+$", re.IGNORECASE)
+# Characters after which OneNote turns a bare web address back into the same link when a page
+# is saved, and characters that may follow it. Tested against OneNote (spec FR-007).
+_RELINK_BEFORE = frozenset("([{\"'„“‚«»‹<-–:;,.!?=)")
+_RELINK_AFTER = frozenset(")]}\"'“”‘’»›.,;:!?")
+
+
+def unlink_bare_urls(text: str) -> str:
+    """Send a web link whose visible text is its own address as plain text, where safe.
+
+    When such a link directly follows a character other than a space (for example "(" in
+    "(https://…)"), OneNote's automatic link detection inserts a visible space before it when
+    the page is saved. Sent as plain text, OneNote recreates the identical link without the
+    space. This is done only where OneNote was tested to do so: the characters between the
+    previous space and the link are all in `_RELINK_BEFORE`, and the link is followed by a
+    space, the end of the paragraph, or a character in `_RELINK_AFTER`. Verification compares
+    web link addresses, so a link OneNote does not recreate is reported (FR-011).
+    """
+
+    def sub(m: re.Match[str]) -> str:
+        href, inner = html.unescape(m.group(2)), m.group(3)
+        if "<" in inner or html_text(inner) != href or not _WEB_URL.match(href):
+            return m.group(0)
+        before = html_text(text[: m.start()])
+        if not before or before[-1].isspace():
+            return m.group(0)  # OneNote keeps these links unchanged
+        word = re.split(r"\s", before)[-1]
+        if any(c not in _RELINK_BEFORE for c in word):
+            return m.group(0)
+        after = html_text(text[m.end() :])
+        if after and not (after[0].isspace() or after[0] in _RELINK_AFTER):
+            return m.group(0)
+        return inner
+
+    return ANCHOR.sub(sub, text)
 
 
 class LayoutError(Exception):
@@ -137,6 +176,8 @@ def _prepare(
     for node in new.iter():
         node.attrib.pop("objectID", None)
         node.attrib.pop("selected", None)
+        if node.tag == q("T") and node.text and "<a" in node.text.lower():
+            node.text = unlink_bare_urls(node.text)
         if "quickStyleIndex" in node.attrib:
             src = src_styles.get(node.get("quickStyleIndex", ""))
             if src is None:
@@ -161,6 +202,15 @@ def _uncopyable(el: ET.Element) -> str | None:
     if tag == "FutureObject":
         return "Inhalt eines neueren OneNote-Formats (nicht kopierbar)"
     return None
+
+
+def unlink_bare_urls_in_page(page_xml: str) -> str:
+    """`unlink_bare_urls` applied to every paragraph of a page XML (used for every write)."""
+    page = parse(page_xml)
+    for t in page.iter(q("T")):
+        if t.text and "<a" in t.text.lower():
+            t.text = unlink_bare_urls(t.text)
+    return tostring(page)
 
 
 def build_target_page(

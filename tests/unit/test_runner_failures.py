@@ -1,4 +1,6 @@
+from notes_processing import runner
 from notes_processing.model import PageStatus
+from tests.conftest import make_gateway
 from tests.unit.runner_helpers import plan_and_run
 
 
@@ -40,6 +42,41 @@ def test_unavailable_retries_then_stops_with_partial_report():
     assert PageStatus.NOT_STARTED in st.values()
     assert all(s != PageStatus.VERIFIED for s in st.values())
     assert report.summary.not_started >= 1
+    assert any("abgebrochen" in m for m in messages)
+
+
+def test_unparseable_source_page_isolated_to_its_page():
+    # FR-012 / US3-AC2: an unexpected error (not a COM error) must not abort the run.
+    gw = make_gateway()
+    real = gw.page_xml
+
+    def page_xml(page_id, binary=True):
+        if page_id == "P4" and binary:  # a source page of "November 2023", loaded in pass 1
+            return "<not xml"
+        return real(page_id, binary)
+
+    gw.page_xml = page_xml
+    _, _, report, _, _ = plan_and_run(gateway=gw)
+    assert not report.stopped
+    st = statuses(report)
+    assert st["November 2023"] in (PageStatus.FAILED, PageStatus.INCOMPLETE)
+    nov = next(p for p in report.pages if p.title == "November 2023")
+    assert "ParseError" in nov.message
+    assert st["Oktober 2023"] == PageStatus.VERIFIED
+    assert st["Haus"] == PageStatus.VERIFIED and st["Garten"] == PageStatus.VERIFIED
+    assert report.summary.completed == 3
+
+
+def test_unexpected_error_outside_pages_still_returns_report(monkeypatch):
+    def boom(self):
+        raise RuntimeError("kaputt")
+
+    monkeypatch.setattr(runner._Runner, "update_links", boom)
+    _, _, report, messages, _ = plan_and_run()
+    assert report.stopped
+    assert "RuntimeError" in report.stop_reason and "kaputt" in report.stop_reason
+    assert all(p.status != PageStatus.VERIFIED for p in report.pages)
+    assert report.summary.incomplete == 4
     assert any("abgebrochen" in m for m in messages)
 
 

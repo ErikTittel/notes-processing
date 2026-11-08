@@ -86,3 +86,40 @@ def test_heading_must_match_decision():
     result = verify_page(wrong, sources(p), xml)
     assert not result.ok
     assert any(m.kind == "heading" and m.source_page_id == "P2" for m in result.mismatches)
+
+
+def test_trailing_whitespace_at_paragraph_end_is_ignored():
+    # OneNote drops spaces at the end of a paragraph when a page is saved (FR-011 note).
+    gw, plan, report, _, _ = plan_and_run()
+    _, xml = merged(gw, report, "November 2023")
+    p = planned(plan, "November 2023")
+    padded = [[t + "  " for t in block] for block in sources(p)]
+    assert verify_page(p, padded, xml).ok
+
+
+def test_other_whitespace_changes_are_still_reported():
+    gw, plan, report, _, _ = plan_and_run()
+    _, xml = merged(gw, report, "November 2023")
+    p = planned(plan, "November 2023")
+    for changed in ("Unter seite.", " Unterseite."):  # inner and leading whitespace count
+        result = verify_page(p, sources(p), xml.replace("Unterseite.", changed))
+        (m,) = result.mismatches
+        assert m.kind == "changed" and m.source_page_title == "02.11.23"
+
+
+def test_missing_or_changed_web_link_reported():
+    from notes_processing.verify import page_web_links
+
+    gw, plan, report, _, _ = plan_and_run()
+    title = next(p.title for p in plan.pages if any(b.page_id == "P10" for b in p.blocks))
+    _, xml = merged(gw, report, title)
+    p = planned(plan, title)
+    links = [page_web_links(read_fixture(f"pages/{b.page_id}.xml")) for b in p.blocks]
+    assert ["https://example.org/beet?a=1&b=2"] in links
+    assert verify_page(p, sources(p), xml, source_links=links).ok
+    # the link turned into plain text (OneNote did not recreate it): text same, link reported
+    broken = xml.replace('href="https://example.org/beet', 'href="https://example.org/other')
+    result = verify_page(p, sources(p), broken, source_links=links)
+    kinds = {(m.kind, m.source_page_id) for m in result.mismatches}
+    assert ("link", "P10") in kinds
+    assert any("Weblink fehlt: https://example.org/beet" in m.detail for m in result.mismatches)

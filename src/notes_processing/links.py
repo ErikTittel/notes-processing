@@ -14,6 +14,7 @@ _ANCHOR = re.compile(
     r"""<a\s[^>]*?href=(["'])(.*?)\1[^>]*>(.*?)</a\s*>""", re.IGNORECASE | re.DOTALL
 )
 _TAG = re.compile(r"<[^>]*>")
+ANCHOR = _ANCHOR  # <a href=…>text</a> inside one:T HTML (shared with pagebuilder)
 
 
 @dataclass(frozen=True)

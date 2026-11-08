@@ -23,7 +23,7 @@ from .report import (
     report_from_json,
     report_to_json,
 )
-from .verify import page_paragraphs, verify_page
+from .verify import page_paragraphs, page_web_links, verify_page
 
 OK = 0
 ITEMS_FAILED = 1
@@ -181,9 +181,11 @@ def cmd_verify(args, gw) -> int:
             missing.append(f"{outcome.title} (aus „{outcome.source_section_name}“)")
             continue
         page = planned[outcome.source_section_id]
-        texts = [page_paragraphs(gw.page_xml(b.page_id, False)) for b in page.blocks]
+        sources = [gw.page_xml(b.page_id, False) for b in page.blocks]
+        texts = [page_paragraphs(x) for x in sources]
+        links = [page_web_links(x) for x in sources]
         target = gw.page_xml(outcome.target_page_id, False)
-        results.append(verify_page(page, texts, target, outcome.target_page_id))
+        results.append(verify_page(page, texts, target, outcome.target_page_id, links))
     (report_path.parent / "verify.md").write_text(
         render_verify_md(results, missing), encoding="utf-8"
     )

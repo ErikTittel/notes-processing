@@ -163,7 +163,7 @@ Single project, `src/` layout: code in `src/notes_processing/`, tests in `tests/
 - [X] T053 [P] Add `tests/unit/test_local_only.py` asserting no module under `src/notes_processing/` imports `socket`, `http`, `urllib`, `requests`, `ssl` or similar network libraries, and that only `onenote/gateway.py` imports `comtypes` (constitution I and II, FR-015)
 - [X] T054 [P] Add a performance smoke test in `tests/unit/test_performance.py`: `build_plan` + `runner.run` with `FakeGateway` on a generated notebook of 15 groups × 12 sections × 30 pages completes in well under a minute (guards against accidental quadratic work toward SC-005)
 - [X] T055 Run `uv run ruff check --fix` and `uv run ruff format` over `src/` and `tests/`, fix remaining issues
-- [ ] T056 Run quickstart.md steps 1–6 against `OneNote-Test`, including the visual check that the October "Zusammenfassung" keeps its two columns without overlap, and record results (including run time) in `specs/001-merge-sections-to-pages/quickstart.md` under a new "Validation log" heading
+- [X] T056 Run quickstart.md steps 1–6 against `OneNote-Test`, including the visual check that the October "Zusammenfassung" keeps its two columns without overlap, and record results (including run time) in `specs/001-merge-sections-to-pages/quickstart.md` under a new "Validation log" heading
 - [ ] T057 Review `plan.md` output for the real notebook (quickstart step 7) with the user before any real `apply`; do not run `apply` on the real notebook without the user present to type `ja`
 
 ---
@@ -256,3 +256,10 @@ US1 alone is not shipped to the CLI: the constitution (principle III) forbids wr
 - Unit tests never touch real notebooks; integration tests create throwaway notebooks and never delete anything
 - The source notebook is never written to; the gateway guard enforces it, and tests assert it
 - Commit after each task or logical group
+
+---
+
+## Phase 8: Convergence
+
+- [X] T058 Make `runner.run` in `src/notes_processing/runner.py` survive any unexpected per-page exception (for example `xml.etree.ElementTree.ParseError` from malformed page XML in `build_target_page`, `split_target_blocks` or `page_paragraphs`): mark that page `failed` before creation or `incomplete` after it with the error message, continue with the next page, and as a last resort around the whole run, still return a partial `RunReport` (`stopped=True`, remaining pages `not_started`) so `cli.apply` always writes `report.json` and `report.md`; add a `FakeGateway` test in `tests/unit/test_runner_failures.py` that returns unparseable XML for one source page and asserts the other pages complete and the report names the failed one, per FR-012 / US3/AC2 / T045 (partial)
+- [X] T059 Review the test-only write helpers on the production gateway (`OneNoteGateway.create_section_group` and the `parent_id` parameter of `create_section` in `src/notes_processing/onenote/gateway.py`, mirrored in `onenote/fake.py`), which go beyond the four write methods in contracts/cli.md → OneNote gateway: either move them into a test-only subclass used by `tests/integration/conftest.py`, or document them in contracts/cli.md as guarded test helpers, per plan: gateway boundary / contracts/cli.md (unrequested)
