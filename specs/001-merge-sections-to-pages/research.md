@@ -82,8 +82,14 @@ The findings below come from a read-only probe of the OneNote COM API against th
 ## R8 — Target notebook location and creation (FR-010)
 
 - **Decision**: Create the target notebook with `OpenHierarchy(<folder>\<target name>, "", cftNotebook=1)`. The folder defaults to `GetSpecialLocation(slDefaultNotebookFolder=2)`, which on this machine is `C:\Users\erikt\OneDrive\Dokumente\OneNote Notebooks`, and can be changed with `--target-folder`. Create sections with `OpenHierarchy("<group name>.one", notebookId, cftSection=3)`.
-- **Rationale**: The tool only writes to a local folder through local COM calls (constitution principle I). Whether that folder is synced by OneDrive is the user's own setup, the same as for the existing notebooks, which are on OneDrive (`https://d.docs.live.net/...`). The tool itself opens no network connections.
-- **Safety**: The tool refuses to start if a notebook with the target name is already open or the target folder already exists. That way it never mixes with or overwrites existing content.
+- **Rationale**: The tool only talks to OneNote through local COM calls and opens no network connections (constitution principle I). Where the notebook ends up is decided by OneNote and the user's setup, the same as for the existing notebooks, which are on OneDrive (`https://d.docs.live.net/...`).
+- **Observed on this machine (2026-11-08)**: The default folder is inside OneDrive. When a notebook is created there, OneNote makes it a **OneDrive cloud notebook**. Locally only an Internet shortcut `<folder>\<target name>.url` remains, pointing to `onedrive.live.com`; there is no notebook folder. OneNote syncs the content, not the tool. A cloud notebook that still exists in OneDrive but is closed in OneNote is not visible to the tool. Creating a notebook with the same name then fails in `OpenHierarchy` with `0x80042006`.
+- **Safety**: The tool refuses to start (exit code 3) in any of these cases:
+  - a notebook with the target name is already open;
+  - the folder `<folder>\<target name>` already exists;
+  - the shortcut `<folder>\<target name>.url` already exists.
+  
+  That way it never mixes with or overwrites existing content, and a name clash is reported by `plan`, not as a COM error during `apply`. A cloud notebook whose local shortcut was deleted can't be detected; `apply` then stops before writing anything, and the report names the `OpenHierarchy` error.
 
 ## R9 — Verification (FR-011)
 

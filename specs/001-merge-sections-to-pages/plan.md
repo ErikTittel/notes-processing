@@ -47,7 +47,7 @@ All transformation logic is pure Python and is tested without OneNote.
 
 | Principle | How the design complies | Status |
 |-----------|------------------------|--------|
-| I. Local-only operation | The only external interface is local COM to OneNote. No HTTP or telemetry libraries. The target notebook is written to a local folder chosen by the user. OneDrive syncing of that folder is the user's existing setup, not something the tool does ([R8](research.md)). | ✅ Pass |
+| I. Local-only operation | The only external interface is local COM to OneNote. No HTTP or telemetry libraries. The target notebook is created through OneNote in a folder chosen by the user. If that folder is in OneDrive, OneNote creates a cloud notebook and syncs it; that is the user's existing setup, not something the tool does ([R8](research.md)). | ✅ Pass |
 | II. Windows and OneNote COM | All COM calls are isolated in `onenote/gateway.py`. COM errors become typed exceptions, and each one is reported as failed or incomplete, never as success ([R11](research.md)). | ✅ Pass |
 | III. Safe reorganization | The output goes to a new notebook. The gateway's write methods reject IDs outside the target notebook. The tool refuses to start if the target already exists. `apply` requires typing "ja" after showing the plan, and it stops if the source changed since the plan ([R10](research.md)). | ✅ Pass |
 | IV. Predictable, user-visible changes | The plan is deterministic and fingerprinted (FR-014). Every title correction, link change, skipped item and content problem is listed in the plan and the report. | ✅ Pass |

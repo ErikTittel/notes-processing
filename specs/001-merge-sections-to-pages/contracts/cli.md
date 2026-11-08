@@ -13,7 +13,7 @@ notes-processing plan --source NOTEBOOK --target NAME
 | Option | Required | Meaning |
 |--------|----------|---------|
 | `--source` | yes | name of the open source notebook, for example `OneNote-Test` |
-| `--target` | yes | name of the new target notebook. It must not exist yet. |
+| `--target` | yes | name of the new target notebook. It must not exist yet: no open notebook with this name, and neither a folder `<target-folder>\<name>` nor a OneDrive shortcut `<target-folder>\<name>.url`. |
 | `--group` | no | limit the run to one section group |
 | `--section` | no | limit it to one section of `--group` |
 | `--target-folder` | no | folder for the new notebook. The default is OneNote's default notebook folder. |
@@ -27,7 +27,7 @@ notes-processing plan --source NOTEBOOK --target NAME
 |------|---------|
 | 0 | plan written |
 | 2 | wrong arguments, or the source, group or section isn't found |
-| 3 | the target name or folder already exists |
+| 3 | the target already exists: a notebook with that name is open, or the target folder or its `.url` shortcut exists |
 | 4 | OneNote isn't available |
 
 ## `apply`: carry out a reviewed plan
@@ -48,6 +48,7 @@ notes-processing apply --plan runs/<id>/plan.json [--yes]
 |------|---------|
 | 0 | all pages verified |
 | 1 | finished, but some items failed, were incomplete or didn't pass verification (see the report) |
+| 3 | the target already exists (same check as for `plan`, repeated because time may have passed) |
 | 4 | OneNote isn't available |
 | 5 | the source changed since the plan was made |
 | 6 | not confirmed |

@@ -81,6 +81,15 @@ def _read_source(gw, source_name: str, target_name: str, target_folder: str | No
     folder = target_folder or gw.special_folder()
     if (Path(folder) / target_name).exists():
         raise _Exit(TARGET_EXISTS, f"Der Ordner „{Path(folder) / target_name}“ existiert bereits.")
+    # In a OneDrive folder OneNote creates cloud notebooks and leaves only a "<name>.url"
+    # shortcut; a closed cloud notebook with this name would make OpenHierarchy fail later.
+    shortcut = Path(folder) / f"{target_name}.url"
+    if shortcut.exists():
+        raise _Exit(
+            TARGET_EXISTS,
+            f"Im Ordner gibt es bereits die Verknüpfung „{shortcut}“ auf ein OneDrive-Notizbuch "
+            f"„{target_name}“. Bitte einen anderen Zielnamen wählen.",
+        )
     source = parse_hierarchy(gw.hierarchy(names[source_name], HS_PAGES))
     return source, folder
 

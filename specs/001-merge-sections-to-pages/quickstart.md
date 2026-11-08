@@ -63,6 +63,8 @@ uv run notes-processing apply --plan runs\<id>\plan.json
 uv run notes-processing verify --report runs\<id>\report.json
 ```
 
+Use a new target name for every repeat, for example "OneNote-Test komplett 2". In the default OneDrive folder, every earlier run leaves a cloud notebook with its name, even after it is closed in OneNote, and `plan` refuses a name that is already taken (exit code 3, [research R8](research.md)).
+
 Expected:
 - 1 section and 12 pages; `report.md` reports 0 failed and every page verified;
 - a link from one month to another opens the matching heading in the new notebook;
