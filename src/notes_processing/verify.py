@@ -64,7 +64,12 @@ def _heading_text(el: ET.Element, styles: dict[str, str]) -> str | None:
 def split_target_blocks(
     target_xml: str, headings: Sequence[str]
 ) -> list[tuple[ET.Element | None, list[ET.Element]]]:
-    """Split a merged page at its heading outlines, matched to `headings` in order."""
+    """Split a merged page at its heading outlines, matched to `headings` in order.
+
+    Whitespace at the end of a heading is not compared: OneNote removes it when it saves the
+    page, for example from a former page title "14.03.15 " (FR-011, T062).
+    """
+    wanted = [h.rstrip() for h in headings]
     page = parse(target_xml)
     styles = _style_names(page)
     blocks: list[tuple[ET.Element | None, list[ET.Element]]] = [(None, []) for _ in headings]
@@ -73,7 +78,7 @@ def split_target_blocks(
         text = _heading_text(el, styles)
         match = None
         if text is not None:
-            match = next((k for k in range(nxt, len(headings)) if headings[k] == text), None)
+            match = next((k for k in range(nxt, len(wanted)) if wanted[k] == text.rstrip()), None)
         if match is not None:
             blocks[match] = (el, [])
             current, nxt = match, match + 1

@@ -1,8 +1,14 @@
+import dataclasses
 import xml.etree.ElementTree as ET
 
 from notes_processing.model import PlannedPage, TitleDecision, TitleStatus
 from notes_processing.onexml import NS, q, tostring
-from notes_processing.verify import extract_text, page_paragraphs, verify_page
+from notes_processing.verify import (
+    extract_text,
+    page_paragraphs,
+    split_target_blocks,
+    verify_page,
+)
 from tests.conftest import read_fixture
 from tests.unit.runner_helpers import plan_and_run
 
@@ -86,6 +92,27 @@ def test_heading_must_match_decision():
     result = verify_page(wrong, sources(p), xml)
     assert not result.ok
     assert any(m.kind == "heading" and m.source_page_id == "P2" for m in result.mismatches)
+
+
+def test_trailing_whitespace_at_heading_end_is_ignored():
+    # A former page title "14.03.15 " arrives as heading "14.03.15": OneNote drops the space
+    # (T062). The heading must still be found, so its paragraphs aren't reported as moved.
+    gw, plan, report, _, _ = plan_and_run()
+    _, xml = merged(gw, report, "Oktober 2023")
+    p = planned(plan, "Oktober 2023")
+    padded = dataclasses.replace(
+        p,
+        blocks=(
+            p.blocks[0],
+            dataclasses.replace(p.blocks[1], heading=p.blocks[1].heading + " "),
+            p.blocks[2],
+        ),
+    )
+    assert verify_page(padded, sources(p), xml).ok
+    split = split_target_blocks(xml, [b.heading for b in padded.blocks])
+    assert all(heading is not None for heading, _ in split)
+    unpadded = split_target_blocks(xml, [b.heading for b in p.blocks])
+    assert [len(els) for _, els in split] == [len(els) for _, els in unpadded]
 
 
 def test_trailing_whitespace_at_paragraph_end_is_ignored():

@@ -101,3 +101,14 @@ Run folders are in `runs/` (git-ignored, because they contain note titles).
 2. **A space inserted before a web link (1 case, "Juli 2023": `mima-co (https://mimaco.de/)`).** OneNote's automatic link detection inserts the space when a link's text is its own web address and the link follows a character other than a space. Pass 2 rewrites outlines that contain OneNote links, so it triggered the same effect again. Fix: such links are written as plain text wherever OneNote was tested to recreate the identical link, in pass 1 and pass 2. Verification now also compares web link addresses (FR-007, FR-011). The first suspected cause, a line break inside the `<a>` tag, turned out to be wrong.
 
 The whole-notebook run (step 5) was repeated with the final code on 2026-11-08 (`20261108-092050`), without differences. Repeats need a new target name each time, because every earlier run leaves a OneDrive cloud notebook with its name (research R8). The source notebook's `lastModifiedTime` values were not compared by hand in these runs; the integration test `test_full_run.py` checks that the source stays unchanged.
+
+### 2026-11-08: `Diary`, real notebook (T057, step 7)
+
+| Step | Run | Result |
+|------|-----|--------|
+| 7. Real notebook without "ab 2024" | `20261108-113009` | Plan reviewed with the user, then confirmed with `ja`. Target "Diary neu": 16 sections, 186 pages from 5826 source pages, 0 failed, 0 incomplete. Run time: 21 min 26 s (11:41:59–12:03:25), well under SC-005. 154 pages verified, 32 with differences. 14 video previews reported and linked (FR-008a). The user checked the differences and accepted the run. |
+
+**Differences in step 7** (95 in total on 32 pages, all reviewed by the user, nothing visible is lost):
+
+1. **Whitespace at the start of a paragraph (49 cases).** OneNote removed a leading space when it saved the merged page, for example „ alte Klausuren“ → „alte Klausuren“. Only whitespace differs in every case.
+2. **A source page title ending in a space (46 differences, one page).** The title "14.03.15 " in section 15-03 ends in a space. OneNote removes it from the heading on the merged page, so verification doesn't find the heading „14.03.15 “. It reports the heading as missing, its 22 paragraphs as missing, and the same paragraphs as extra on the previous page "13.03.15". The content is on the merged page in the right place. Fixed in T062: headings are now matched without trailing whitespace. This matching is also used by pass 2 to find a heading as a link target. `verify` on a copy of the run folder then reported 155 of 186 pages without differences; only the 49 whitespace cases from item 1 remain.
