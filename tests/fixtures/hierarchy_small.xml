@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<one:Notebooks xmlns:one="http://schemas.microsoft.com/office/onenote/2013/onenote">
+  <one:Notebook name="Test-NB" nickname="Test-NB" ID="NB1" path="C:\Notes\Test-NB" lastModifiedTime="2023-12-01T10:00:00.000Z">
+    <one:SectionGroup name="2023" ID="G1" path="C:\Notes\Test-NB\2023" lastModifiedTime="2023-12-01T10:00:00.000Z">
+      <one:Section name="23-10" ID="S1" path="C:\Notes\Test-NB\2023\23-10.one" lastModifiedTime="2023-10-31T10:00:00.000Z">
+        <one:Page ID="P1" name="04.10.23" pageLevel="1" lastModifiedTime="2023-10-04T10:00:00.000Z"/>
+        <one:Page ID="P2" name="05.12.23" pageLevel="1" lastModifiedTime="2023-10-05T10:00:00.000Z"/>
+        <one:Page ID="P3" name="07.10.23" pageLevel="1" lastModifiedTime="2023-10-07T10:00:00.000Z"/>
+      </one:Section>
+      <one:Section name="23-11" ID="S2" path="C:\Notes\Test-NB\2023\23-11.one" lastModifiedTime="2023-11-30T10:00:00.000Z">
+        <one:Page ID="P4" name="01.11.23" pageLevel="1" lastModifiedTime="2023-11-01T10:00:00.000Z"/>
+        <one:Page ID="P5" name="Zusammenfassung" pageLevel="1" lastModifiedTime="2023-11-30T10:00:00.000Z"/>
+        <one:Page ID="P6" name="02.11.23" pageLevel="2" lastModifiedTime="2023-11-02T10:00:00.000Z"/>
+      </one:Section>
+    </one:SectionGroup>
+    <one:SectionGroup name="Projekte" ID="G2" path="C:\Notes\Test-NB\Projekte" lastModifiedTime="2023-12-01T10:00:00.000Z">
+      <one:Section name="Haus" ID="S3" path="C:\Notes\Test-NB\Projekte\Haus.one" lastModifiedTime="2023-06-01T10:00:00.000Z">
+        <one:Page ID="P7" name="Planung" pageLevel="1" lastModifiedTime="2023-06-01T10:00:00.000Z"/>
+        <one:Page ID="P8" name="Kosten" pageLevel="1" lastModifiedTime="2023-06-02T10:00:00.000Z"/>
+        <one:Page ID="P9" name="Notizen" pageLevel="1" lastModifiedTime="2023-06-03T10:00:00.000Z"/>
+      </one:Section>
+      <one:Section name="Garten" ID="S4" path="C:\Notes\Test-NB\Projekte\Garten.one" lastModifiedTime="2023-07-01T10:00:00.000Z">
+        <one:Page ID="P10" name="Beete" pageLevel="1" lastModifiedTime="2023-07-01T10:00:00.000Z"/>
+        <one:Page ID="P11" name="Verweise" pageLevel="1" lastModifiedTime="2023-07-02T10:00:00.000Z"/>
+        <one:Page ID="P12" name="Ernte" pageLevel="1" lastModifiedTime="2023-07-03T10:00:00.000Z"/>
+      </one:Section>
+    </one:SectionGroup>
+  </one:Notebook>
+  <one:Notebook name="Diary" nickname="Diary" ID="NB2" path="C:\Notes\Diary" lastModifiedTime="2023-12-01T10:00:00.000Z">
+    <one:Section name="Allgemein" ID="DS1" path="C:\Notes\Diary\Allgemein.one" lastModifiedTime="2023-12-01T10:00:00.000Z">
+      <one:Page ID="DP1" name="Eintrag" pageLevel="1" lastModifiedTime="2023-12-01T10:00:00.000Z"/>
+    </one:Section>
+  </one:Notebook>
+</one:Notebooks>

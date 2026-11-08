@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<one:Notebook xmlns:one="http://schemas.microsoft.com/office/onenote/2013/onenote" name="Edge-NB" ID="ENB" path="C:\Notes\Edge-NB" lastModifiedTime="2023-12-01T10:00:00.000Z">
+  <one:Section name="Lose" ID="E-loose" path="C:\Notes\Edge-NB\Lose.one" lastModifiedTime="2023-01-01T00:00:00.000Z">
+    <one:Page ID="EP0" name="lose Seite" pageLevel="1" lastModifiedTime="2023-01-01T00:00:00.000Z"/>
+  </one:Section>
+  <one:SectionGroup name="A" ID="EG-A" path="C:\Notes\Edge-NB\A" lastModifiedTime="2023-01-01T00:00:00.000Z">
+    <one:Section name="X" ID="E-X" path="C:\Notes\Edge-NB\A\X.one" lastModifiedTime="2023-01-01T00:00:00.000Z" locked="true"/>
+    <one:Section name="Leer" ID="E-Leer" path="C:\Notes\Edge-NB\A\Leer.one" lastModifiedTime="2023-01-01T00:00:00.000Z"/>
+    <one:Section name="Dup" ID="E-Dup1" path="C:\Notes\Edge-NB\A\Dup.one" lastModifiedTime="2023-01-02T00:00:00.000Z">
+      <one:Page ID="EP1" name="03.01.23" pageLevel="1" lastModifiedTime="2023-01-03T00:00:00.000Z"/>
+      <one:Page ID="EP2" name="weg" pageLevel="1" lastModifiedTime="2023-01-03T00:00:00.000Z" isInRecycleBin="true"/>
+      <one:Page ID="EP3" name="" pageLevel="1" lastModifiedTime="2023-01-04T00:00:00.000Z"/>
+      <one:Page ID="EP4" name="Sub" pageLevel="2" lastModifiedTime="2023-01-05T00:00:00.000Z"/>
+    </one:Section>
+    <one:Section name="Dup" ID="E-Dup2" path="C:\Notes\Edge-NB\A\Dup1.one" lastModifiedTime="2023-01-02T00:00:00.000Z">
+      <one:Page ID="EP5" name="A" pageLevel="1" lastModifiedTime="2023-01-03T00:00:00.000Z"/>
+    </one:Section>
+    <one:SectionGroup name="Innen" ID="EG-In" path="C:\Notes\Edge-NB\A\Innen" lastModifiedTime="2023-01-01T00:00:00.000Z">
+      <one:Section name="tief" ID="E-tief" path="C:\Notes\Edge-NB\A\Innen\tief.one" lastModifiedTime="2023-01-01T00:00:00.000Z"/>
+    </one:SectionGroup>
+  </one:SectionGroup>
+  <one:SectionGroup name="A" ID="EG-A2" path="C:\Notes\Edge-NB\A1" lastModifiedTime="2023-01-01T00:00:00.000Z">
+    <one:Section name="Z" ID="E-Z" path="C:\Notes\Edge-NB\A1\Z.one" lastModifiedTime="2023-01-01T00:00:00.000Z">
+      <one:Page ID="EP6" name="x" pageLevel="1" lastModifiedTime="2023-01-01T00:00:00.000Z"/>
+    </one:Section>
+  </one:SectionGroup>
+  <one:SectionGroup name="B" ID="EG-B" path="C:\Notes\Edge-NB\B" lastModifiedTime="2023-01-01T00:00:00.000Z">
+    <one:Section name="B1" ID="E-B1" path="C:\Notes\Edge-NB\B\B1.one" lastModifiedTime="2023-01-01T00:00:00.000Z">
+      <one:Page ID="EP7" name="y" pageLevel="3" lastModifiedTime="2023-01-01T00:00:00.000Z"/>
+    </one:Section>
+    <one:Section name="B2" ID="E-B2" path="C:\Notes\Edge-NB\B\B2.one" lastModifiedTime="2023-01-01T00:00:00.000Z" encrypted="true"/>
+  </one:SectionGroup>
+  <one:SectionGroup name="OneNote_RecycleBin" ID="E-RB" path="C:\Notes\Edge-NB\OneNote_RecycleBin" isRecycleBin="true" lastModifiedTime="2023-01-01T00:00:00.000Z">
+    <one:Section name="Gelöscht" ID="E-del" path="C:\Notes\Edge-NB\OneNote_RecycleBin\del.one" lastModifiedTime="2023-01-01T00:00:00.000Z"/>
+  </one:SectionGroup>
+</one:Notebook>
