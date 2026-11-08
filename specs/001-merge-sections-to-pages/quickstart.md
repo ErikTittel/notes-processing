@@ -63,6 +63,8 @@ uv run notes-processing apply --plan runs\<id>\plan.json
 uv run notes-processing verify --report runs\<id>\report.json
 ```
 
+Use a new target name for every repeat, for example "OneNote-Test komplett 2". In the default OneDrive folder, every earlier run leaves a cloud notebook with its name, even after it is closed in OneNote, and `plan` refuses a name that is already taken (exit code 3, [research R8](research.md)).
+
 Expected:
 - 1 section and 12 pages; `report.md` reports 0 failed and every page verified;
 - a link from one month to another opens the matching heading in the new notebook;
@@ -76,3 +78,26 @@ During step 5, close OneNote while the run is in progress. Expected: after 3 ret
 ## 7. Real notebook
 
 Repeat steps 3 and 5 with the real notebook's name. Before confirming, check `plan.md`: look at the title corrections, the "could not be corrected" and "out of order" lists, and the attention items. Expected run time: under 2 hours (SC-005).
+
+## Validation log
+
+### 2026-11-08: `OneNote-Test` (T056)
+
+Run folders are in `runs/` (git-ignored, because they contain note titles).
+
+| Step | Run | Result |
+|------|-----|--------|
+| 1. Automated tests | – | 160 unit tests pass (`uv run pytest -m "not onenote"`); the 3 OneNote integration tests pass too (`-m onenote`). |
+| 2. Plan, decline | `20261108-070812` | Plan written (`plan.json`, `plan.md`), not confirmed, so there is no report. |
+| 3./4. One section (23-10, October with "Zusammenfassung") | `20261108-075220` | 1 of 1 page verified. Checked by eye: the "Zusammenfassung" block keeps its two columns, and nothing overlaps. |
+| 5. Whole test notebook | `20261108-075631` | 1 section, 12 pages from 378 source pages. Run time: 23 s (07:58:09–07:58:32). 6 pages verified and 6 with differences, see below. After the first fix, `verify` reports 11 of 12 pages without differences. |
+| 5. Re-check July after the second fix | `20261108-082003` (before), `20261108-083554` (after) | "Juli 2023" (32 source pages): with differences before, verified after (run time 13 s). |
+| 5. Whole test notebook, final code | `20261108-092050` | Target "OneNote-Test komplett 3": 1 section, 12 pages from 378 source pages, all 12 verified, 0 failed. `verify` reports 12 of 12 pages without differences. Run time: 26 s (09:21:24–09:21:50). All 8 links point into other notebooks (Literatur, Arbeit, Exocortex) and were kept unchanged, as required. OneNote-Test has no links between its own months, so re-pointing links is covered by the integration test `test_full_run.py` only. |
+| 6. Stopped run | – | No run folder documents a stopped run. Stopping and retrying are covered by unit tests (`tests/unit/test_runner_failures.py`) only. |
+
+**Differences found in step 5, and how they were resolved** (spec clarification session 2026-11-08):
+
+1. **Whitespace at the end of a paragraph (13 cases).** OneNote removes it whenever a page is saved. It is not visible, so verification no longer compares it (FR-011).
+2. **A space inserted before a web link (1 case, "Juli 2023": `mima-co (https://mimaco.de/)`).** OneNote's automatic link detection inserts the space when a link's text is its own web address and the link follows a character other than a space. Pass 2 rewrites outlines that contain OneNote links, so it triggered the same effect again. Fix: such links are written as plain text wherever OneNote was tested to recreate the identical link, in pass 1 and pass 2. Verification now also compares web link addresses (FR-007, FR-011). The first suspected cause, a line break inside the `<a>` tag, turned out to be wrong.
+
+The whole-notebook run (step 5) was repeated with the final code on 2026-11-08 (`20261108-092050`), without differences. Repeats need a new target name each time, because every earlier run leaves a OneDrive cloud notebook with its name (research R8). The source notebook's `lastModifiedTime` values were not compared by hand in these runs; the integration test `test_full_run.py` checks that the source stays unchanged.

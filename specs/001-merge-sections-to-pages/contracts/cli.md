@@ -13,7 +13,7 @@ notes-processing plan --source NOTEBOOK --target NAME
 | Option | Required | Meaning |
 |--------|----------|---------|
 | `--source` | yes | name of the open source notebook, for example `OneNote-Test` |
-| `--target` | yes | name of the new target notebook. It must not exist yet. |
+| `--target` | yes | name of the new target notebook. It must not exist yet: no open notebook with this name, and neither a folder `<target-folder>\<name>` nor a OneDrive shortcut `<target-folder>\<name>.url`. |
 | `--group` | no | limit the run to one section group |
 | `--section` | no | limit it to one section of `--group` |
 | `--target-folder` | no | folder for the new notebook. The default is OneNote's default notebook folder. |
@@ -27,7 +27,7 @@ notes-processing plan --source NOTEBOOK --target NAME
 |------|---------|
 | 0 | plan written |
 | 2 | wrong arguments, or the source, group or section isn't found |
-| 3 | the target name or folder already exists |
+| 3 | the target already exists: a notebook with that name is open, or the target folder or its `.url` shortcut exists |
 | 4 | OneNote isn't available |
 
 ## `apply`: carry out a reviewed plan
@@ -48,6 +48,7 @@ notes-processing apply --plan runs/<id>/plan.json [--yes]
 |------|---------|
 | 0 | all pages verified |
 | 1 | finished, but some items failed, were incomplete or didn't pass verification (see the report) |
+| 3 | the target already exists (same check as for `plan`, repeated because time may have passed) |
 | 4 | OneNote isn't available |
 | 5 | the source changed since the plan was made |
 | 6 | not confirmed |
@@ -76,3 +77,5 @@ Re-reads the source and target pages and runs the check from FR-011 again, then 
 ## OneNote gateway (internal boundary)
 
 Every COM call goes through one class, `OneNoteGateway` (`src/notes_processing/onenote/gateway.py`). Its read methods are `hierarchy`, `page_xml`, `link_to` and `special_folder`. Its write methods are `create_notebook`, `create_section`, `create_page` and `update_page`. The write methods refuse any ID outside the target notebook recorded at `create_notebook`. Tests use `FakeGateway`, which has the same interface and works on in-memory XML.
+
+**Test helpers**: Two more write capabilities exist only to build throwaway source notebooks for the integration tests. They are `create_section_group(name)` and the optional `parent_id` of `create_section(name, parent_id=None)`, which places a section inside such a group. The tool itself never calls them: `apply` creates only sections directly in the target notebook. They are covered by the same guard, so they work only inside a notebook created by that gateway instance, never in the source notebook. `FakeGateway` mirrors them so the guard can be unit-tested.

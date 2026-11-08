@@ -88,6 +88,27 @@ def test_target_already_open_or_folder_exists(tmp_path, gw):
     assert make_plan(tmp_path, gw)[0] == cli.TARGET_EXISTS
 
 
+def test_target_onedrive_shortcut_exists(tmp_path, gw, capsys):
+    # In a OneDrive folder, OneNote creates cloud notebooks and leaves only "<name>.url".
+    # A closed cloud notebook with the target name would make create_notebook fail later.
+    (tmp_path / "nb").mkdir()
+    (tmp_path / "nb" / "Neu.url").write_text("[InternetShortcut]\nURL=https://x\n")
+    assert make_plan(tmp_path, gw)[0] == cli.TARGET_EXISTS
+    assert "Neu.url" in capsys.readouterr().err
+    assert not (tmp_path / "run" / "plan.json").exists()
+    assert gw.write_calls == []
+
+
+def test_apply_refuses_when_shortcut_appeared_after_plan(tmp_path, gw):
+    code, out = make_plan(tmp_path, gw)
+    assert code == cli.OK
+    (tmp_path / "nb").mkdir(exist_ok=True)
+    (tmp_path / "nb" / "Neu.url").write_text("[InternetShortcut]\n")
+    apply_gw = make_gateway()
+    assert run(["apply", "--plan", str(out / "plan.json"), "--yes"], apply_gw) == cli.TARGET_EXISTS
+    assert apply_gw.write_calls == []
+
+
 def test_onenote_unavailable(tmp_path):
     def factory():
         raise OneNoteUnavailable("weg")

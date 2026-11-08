@@ -9,7 +9,7 @@ from notes_processing.model import PageStatus, Scope
 from notes_processing.onenote.gateway import HS_PAGES, OneNoteGateway
 from notes_processing.onexml import content_elements, local, parse, q
 from notes_processing.planner import make_plan
-from notes_processing.verify import split_target_blocks
+from notes_processing.verify import page_paragraphs, split_target_blocks
 
 from .conftest import CREATED, build_notebook, image, inserted_file, link, media_file, outline
 
@@ -33,6 +33,10 @@ def spec(files):
                                 "Morgens <span style='font-weight:bold'>Kaffee</span>.",
                                 "Siehe " + link("2023/23-10/Zusammenfassung", "Zusammenfassung"),
                                 "Web: " + link("https://example.org/", "Beispiel"),
+                                # A web link right after "(", as in the real notes. Sent as
+                                # plain text, so OneNote links it without inserting a space.
+                                # The trailing space is dropped by OneNote (FR-007, FR-011).
+                                "Klammer (https://example.org/k) Ende ",
                             ],
                         )
                     ],
@@ -95,4 +99,12 @@ def test_merge_one_section(it_folder, attachments):
     heading_oe = blocks[2][0].find(f".//{q('OE')}").get("objectID")
     assert same_target(links["Zusammenfassung"], gw.link_to(outcome.target_page_id, heading_oe))
     assert links["Beispiel"] == "https://example.org/"
+
+    # The web link right after "(" is a link on the source page (precondition), and on the
+    # merged page it is still a link to the same address with no space inserted before it.
+    url = "https://example.org/k"
+    src_xml = gw.page_xml(ids["2023/23-10/04.10.23"], False)
+    assert dict(extract_links(src_xml)).get(url) == url
+    assert links.get(url) == url
+    assert "Klammer (https://example.org/k) Ende" in [t.rstrip() for t in page_paragraphs(xml)]
     assert len(content_elements(page)) >= 9

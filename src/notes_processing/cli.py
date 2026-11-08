@@ -23,7 +23,7 @@ from .report import (
     report_from_json,
     report_to_json,
 )
-from .verify import page_paragraphs, verify_page
+from .verify import page_paragraphs, page_web_links, verify_page
 
 OK = 0
 ITEMS_FAILED = 1
@@ -81,6 +81,15 @@ def _read_source(gw, source_name: str, target_name: str, target_folder: str | No
     folder = target_folder or gw.special_folder()
     if (Path(folder) / target_name).exists():
         raise _Exit(TARGET_EXISTS, f"Der Ordner „{Path(folder) / target_name}“ existiert bereits.")
+    # In a OneDrive folder OneNote creates cloud notebooks and leaves only a "<name>.url"
+    # shortcut; a closed cloud notebook with this name would make OpenHierarchy fail later.
+    shortcut = Path(folder) / f"{target_name}.url"
+    if shortcut.exists():
+        raise _Exit(
+            TARGET_EXISTS,
+            f"Im Ordner gibt es bereits die Verknüpfung „{shortcut}“ auf ein OneDrive-Notizbuch "
+            f"„{target_name}“. Bitte einen anderen Zielnamen wählen.",
+        )
     source = parse_hierarchy(gw.hierarchy(names[source_name], HS_PAGES))
     return source, folder
 
@@ -181,9 +190,11 @@ def cmd_verify(args, gw) -> int:
             missing.append(f"{outcome.title} (aus „{outcome.source_section_name}“)")
             continue
         page = planned[outcome.source_section_id]
-        texts = [page_paragraphs(gw.page_xml(b.page_id, False)) for b in page.blocks]
+        sources = [gw.page_xml(b.page_id, False) for b in page.blocks]
+        texts = [page_paragraphs(x) for x in sources]
+        links = [page_web_links(x) for x in sources]
         target = gw.page_xml(outcome.target_page_id, False)
-        results.append(verify_page(page, texts, target, outcome.target_page_id))
+        results.append(verify_page(page, texts, target, outcome.target_page_id, links))
     (report_path.parent / "verify.md").write_text(
         render_verify_md(results, missing), encoding="utf-8"
     )

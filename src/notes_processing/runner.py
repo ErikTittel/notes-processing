@@ -28,8 +28,8 @@ from .model import (
 )
 from .onenote.errors import OneNoteCallFailed, OneNoteError, OneNoteUnavailable
 from .onexml import content_elements, local, oe_ids, parse, tostring
-from .pagebuilder import LayoutError, build_target_page
-from .verify import page_paragraphs, split_target_blocks, verify_page
+from .pagebuilder import LayoutError, build_target_page, unlink_bare_urls_in_page
+from .verify import page_paragraphs, page_web_links, split_target_blocks, verify_page
 
 BACKOFF = (1.0, 4.0, 16.0)
 
@@ -59,6 +59,7 @@ class _PageState:
     target_page_id: str = ""
     blocks: dict[str, _BlockInfo] = field(default_factory=dict)  # source page id -> info
     source_texts: list[list[str]] = field(default_factory=list)
+    source_links: list[list[str]] = field(default_factory=list)
 
     def outcome(self) -> PageOutcome:
         return PageOutcome(
@@ -70,6 +71,10 @@ class _PageState:
             self.message,
             self.target_page_id,
         )
+
+
+def _unexpected(exc: Exception) -> str:
+    return f"Unerwarteter Fehler ({type(exc).__name__}): {exc}"
 
 
 def _now() -> str:
@@ -131,6 +136,17 @@ class _Runner:
             )
 
     def write_page(self, st: _PageState, section_id: str) -> None:
+        try:
+            self._write_page(st, section_id)
+        except _Stop, OneNoteError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - e.g. bad page XML: this page only (FR-012)
+            st.status = (
+                PageStatus.FAILED if st.status == PageStatus.PLANNED else PageStatus.INCOMPLETE
+            )
+            st.message = _unexpected(exc)
+
+    def _write_page(self, st: _PageState, section_id: str) -> None:
         planned = st.planned
         try:
             try:
@@ -168,6 +184,7 @@ class _Runner:
             )
             st.blocks[page.id] = info
             st.source_texts.append(page_paragraphs(src_xml))
+            st.source_links.append(page_web_links(src_xml))
 
     # ------------------------------------------------------------------ pass 2
     def resolve(self, link) -> tuple[str | None, str]:
@@ -225,8 +242,14 @@ class _Runner:
                 continue
             try:
                 new, reason = self.resolve(link)
+            except _Stop:
+                raise
             except OneNoteCallFailed as exc:
                 new, reason = None, str(exc)
+            except OneNoteError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - confined to this page/link
+                new, reason = None, _unexpected(exc)
             if new is None:
                 self.keep(link, reason)
             else:
@@ -250,15 +273,23 @@ class _Runner:
                         if h == link.href or same_target(h, link.href):
                             mapping[h] = new
                             found.add(link.href)
-                self.call("update_page", _changed_only(current, rewrite_hrefs(current, mapping)))
-            except OneNoteCallFailed as exc:
+                self.call("update_page", pass2_xml(current, mapping))
+            except _Stop:
+                st.status, st.message = PageStatus.INCOMPLETE, "Lauf abgebrochen"
+                raise
+            except OneNoteError as exc:
+                if not isinstance(exc, OneNoteCallFailed):
+                    raise
                 st.status, st.message = PageStatus.INCOMPLETE, f"Links nicht aktualisiert: {exc}"
                 for link, _, _ in changes:
                     self.keep(link, "Aktualisierung fehlgeschlagen")
                 continue
-            except _Stop:
-                st.status, st.message = PageStatus.INCOMPLETE, "Lauf abgebrochen"
-                raise
+            except Exception as exc:  # noqa: BLE001 - confined to this page/link
+                st.status = PageStatus.INCOMPLETE
+                st.message = f"Links nicht aktualisiert: {_unexpected(exc)}"
+                for link, _, _ in changes:
+                    self.keep(link, "Aktualisierung fehlgeschlagen")
+                continue
             st.status = PageStatus.LINKS_UPDATED
             for link, new, reason in changes:
                 if link.href in found:
@@ -288,10 +319,17 @@ class _Runner:
                 continue
             try:
                 target = self.call("page_xml", st.target_page_id, False)
+                result = verify_page(
+                    st.planned, st.source_texts, target, st.target_page_id, st.source_links
+                )
             except OneNoteCallFailed as exc:
                 st.status, st.message = PageStatus.VERIFICATION_FAILED, str(exc)
                 continue
-            result = verify_page(st.planned, st.source_texts, target, st.target_page_id)
+            except _Stop, OneNoteError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - confined to this page/link
+                st.status, st.message = PageStatus.VERIFICATION_FAILED, _unexpected(exc)
+                continue
             self.verification.append(result)
             if result.ok:
                 st.status = PageStatus.VERIFIED
@@ -312,6 +350,9 @@ class _Runner:
             self.progress(reason)
         except OneNoteError as exc:  # e.g. target notebook could not be created
             stopped, reason = True, f"Lauf abgebrochen: {exc}"
+            self.progress(reason)
+        except Exception as exc:  # noqa: BLE001 - last resort: still return a report (FR-012)
+            stopped, reason = True, f"Lauf abgebrochen: {_unexpected(exc)}"
             self.progress(reason)
         for st in self.states:
             if st.status == PageStatus.PLANNED:
@@ -366,6 +407,15 @@ class _Runner:
             stopped=stopped,
             stop_reason=reason,
         )
+
+
+def pass2_xml(current: str, mapping: dict[str, str]) -> str:
+    """Partial update for pass 2: re-pointed links, only the changed elements.
+
+    Everything sent is written again by OneNote, so bare web links are unlinked here too
+    (pagebuilder.unlink_bare_urls); otherwise OneNote inserts a space before them.
+    """
+    return unlink_bare_urls_in_page(_changed_only(current, rewrite_hrefs(current, mapping)))
 
 
 def _changed_only(original: str, rewritten: str) -> str:

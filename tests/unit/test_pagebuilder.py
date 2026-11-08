@@ -138,3 +138,55 @@ def test_structure_order(index):
     first_content = order.index("Title")
     assert all(t not in ("QuickStyleDef", "TagDef") for t in order[first_content:])
     assert order[0] == "QuickStyleDef"
+
+
+U = "https://mimaco.de/"
+
+
+def a(href, text=None):
+    return f'<a href="{href}">{href if text is None else text}</a>'
+
+
+@pytest.mark.parametrize(
+    "before, after",
+    [
+        ("mima-co (", "), x"),  # the case found in OneNote-Test
+        ("[", "]"),
+        ("„", "“ Ende"),
+        ("Siehe: -", "."),
+        ("x (", ""),  # end of paragraph
+    ],
+)
+def test_bare_url_link_after_punctuation_sent_as_plain_text(before, after):
+    # OneNote inserts a space before such a link, but recreates it from plain text (FR-007).
+    from notes_processing.pagebuilder import unlink_bare_urls
+
+    assert unlink_bare_urls(before + a(U) + after) == before + U + after
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Web: " + a(U),  # space before: OneNote keeps the link as it is
+        a(U) + " am Anfang",  # start of paragraph
+        "(" + a(U, "mimaco") + ")",  # link text is not the address
+        "Datei:" + a(U),  # letters before the colon: OneNote would not recreate the link
+        "x" + a(U),  # letter before
+        "/" + a(U),  # untested character
+        "(" + a(U) + "x",  # letter right after
+        "(" + a("mailto:a@b.de") + ")",  # not a web link
+        "(" + a("onenote:#x&amp;end", "onenote:#x&end") + ")",
+        '(<a href="' + U + '"><span style="font-weight:bold">' + U + "</span></a>)",  # formatted
+    ],
+)
+def test_other_links_unchanged(text):
+    from notes_processing.pagebuilder import unlink_bare_urls
+
+    assert unlink_bare_urls(text) == text
+
+
+def test_bare_url_link_with_escaped_ampersand():
+    from notes_processing.pagebuilder import unlink_bare_urls
+
+    q_url = "https://example.org/a?b=1&amp;c=2"
+    assert unlink_bare_urls(f'(<a href="{q_url}">{q_url}</a>)') == f"({q_url})"

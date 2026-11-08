@@ -100,3 +100,27 @@ def test_partial_run_keeps_links_outside_scope():
 def test_content_issue_reported():
     _, _, report, _, _ = plan_and_run(Scope.build("Projekte", "Garten"))
     assert [(i.source_page_title, i.element) for i in report.content_issues] == [("Ernte", "Image")]
+
+
+def test_pass2_resend_unlinks_bare_web_links():
+    # Pass 2 re-sends whole outlines; a bare web link after "(" read back from OneNote must be
+    # sent as plain text again, or OneNote inserts a space before it (FR-007).
+    from notes_processing.onexml import NS
+    from notes_processing.runner import pass2_xml
+
+    old = "onenote:#x&amp;section-id={A}&amp;end"
+    current = (
+        f'<one:Page xmlns:one="{NS}" ID="TP1"><one:Outline objectID="O1"><one:OEChildren>'
+        f'<one:OE objectID="E1"><one:T><![CDATA[Siehe <a href="{old}">x</a>]]></one:T></one:OE>'
+        '<one:OE objectID="E2"><one:T><![CDATA[Klammer (<a\nhref="https://example.org/k">'
+        "https://example.org/k</a>) Ende]]></one:T></one:OE>"
+        "</one:OEChildren></one:Outline></one:Page>"
+    )
+    sent = pass2_xml(current, {"onenote:#x&section-id={A}&end": "onenote:#new&end"})
+    from notes_processing.onexml import parse, q
+
+    texts = [t.text for t in parse(sent).iter(q("T"))]
+    assert texts == [
+        'Siehe <a href="onenote:#new&amp;end">x</a>',
+        "Klammer (https://example.org/k) Ende",
+    ]
