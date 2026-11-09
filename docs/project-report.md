@@ -52,3 +52,22 @@ These are rough estimates for an experienced developer. Windows COM/OneNote inte
 That is about **6–8 working weeks** for one person, or roughly 280 hours as a midpoint. The Spec Kit scaffold (about 3.4k lines of PowerShell and Python, plus the skill files) is excluded because it is generated tooling.
 
 The repo's timestamps cover about 18 hours of elapsed time over two days, which is a large speed-up.
+
+## Lessons learned
+
+- **The specs are larger than the source code.** The Markdown files for specs, skills and templates (4,256 lines) are longer than the application code (3,096 lines).
+- **Knowing the programming language is not required, but understanding the setup and technology is.** You don't need to read or write Python, but you do need to understand the tooling, the runtime and the technology involved (here, `uv`, Windows COM and the OneNote API).
+- **The size of the context window no longer matters.** All relevant information is in the specs, so each step can start fresh from them instead of relying on what is left in the conversation.
+- **Spec Kit enforces a clean software development lifecycle:**
+
+| Step | Purpose |
+|---|---|
+| Constitution | Guiding principles |
+| Specify | Specifications and requirements (what and why) |
+| Clarify | Later additions and clarifications to the requirements |
+| Plan | Technical setup and implementation details (how) |
+| Checklist | Checks whether the spec is complete, like unit tests for your requirements |
+| Tasks | Actionable task list |
+| Analyze | Checks consistency between spec, plan and tasks |
+| Implement (test first) | Executes the tasks |
+| Converge | Checks the implementation and whether all tasks are finished |
